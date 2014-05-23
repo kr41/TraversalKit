@@ -1,0 +1,9 @@
+syntax: glob
+
+*.pyc
+*.~
+traversal-kit.sublime*
+TraversalKit.egg-info
+.tox
+.coverage
+devenv
