@@ -169,13 +169,19 @@ class Resource(BaseResource):
         """
         Searches particular parent in the resource lineage.
 
-        Search can be done by parent's name, as well as by parent's class.
+        Search can be done by parent's name, as well as by parent's class
+        (using ``cls`` argument).
+
+        The ``cls`` argument accepts class name, as well as class itself.
 
         """
         if name is not None:
             check = lambda r: r.__name__ == name
         elif cls is not None:
-            check = lambda r: r.__class__.__name__ == cls
+            if isinstance(cls, type):
+                check = lambda r: r.__class__ is cls
+            else:
+                check = lambda r: r.__class__.__name__ == cls
         else:
             return self.__parent__
         for resource in self.lineage():

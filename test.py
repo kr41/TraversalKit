@@ -109,8 +109,11 @@ def test_parent():
     tools.eq_(post.parent('user'), None)
     tools.eq_(post.parent('blog'), blog)
     tools.eq_(post.parent(cls='SiteRoot'), sr)
+    tools.eq_(post.parent(cls=SiteRoot), sr)
     tools.eq_(post.parent(cls='User'), None)
+    tools.eq_(post.parent(cls=User), None)
     tools.eq_(post.parent(cls='Blog'), blog)
+    tools.eq_(post.parent(cls=Blog), blog)
     tools.eq_(post.parent(), blog)
 
 
