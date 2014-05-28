@@ -3,14 +3,14 @@ from setuptools import setup
 
 version = '0.1'
 here = os.path.abspath(os.path.dirname(__file__))
-README = open(os.path.join(here, 'README.rst')).read()
-CHANGES = open(os.path.join(here, 'CHANGES.rst')).read()
+with open(os.path.join(here, 'README.rst')) as f:
+    readme = f.read()
 
 setup(
     name='TraversalKit',
     version=version,
-    description='',
-    long_description=README + '\n\n' + CHANGES,
+    description='Helper library for Pyramid applications based on Traversal',
+    long_description=readme,
     classifiers=[
         'License :: OSI Approved :: BSD License',
         'Programming Language :: Python',
@@ -22,12 +22,13 @@ setup(
         'Intended Audience :: Developers',
         'Framework :: Pyramid',
     ],
-    keywords='',
+    keywords='pyramid traversal resources',
     author='Dmitry Vakhrushev',
     author_email='self@kr41.net',
     url='https://bitbucket.org/kr41/traversalkit',
     download_url='https://bitbucket.org/kr41/traversalkit/downloads',
     license='BSD',
+    test_suite='nose.collector',
     py_modules=['traversalkit'],
     zip_safe=True,
 )

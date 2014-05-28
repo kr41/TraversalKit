@@ -7,3 +7,4 @@ TraversalKit.egg-info
 .tox
 .coverage
 devenv
+dist

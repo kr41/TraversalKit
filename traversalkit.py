@@ -1,21 +1,31 @@
 """
-Traversal Kit
--------------
-
 The library provides base class :class:`Resource` to build hierarchy
 of `location-aware resources`_, which will be used in Pyramid_ application
 using traversal_.
 
 
-::  _Pyramid: http://docs.pylonsproject.org/projects/pyramid/en/latest/
-::  _traversal: http://docs.pylonsproject.org/projects/pyramid/en/latest/
+..  _Pyramid: http://docs.pylonsproject.org/projects/pyramid/en/latest/
+..  _traversal: http://docs.pylonsproject.org/projects/pyramid/en/latest/
                 narr/traversal.html
-::  _location aware resources: http://docs.pylonsproject.org/projects/pyramid/
+..  _location-aware resources: http://docs.pylonsproject.org/projects/pyramid/
                                en/latest/narr/resources.html#
                                location-aware-resources
 
+It also provides most common name pattens, which can be used with
+:meth:`Resource.mount_set` method:
+
+    ``ANY_ID``
+        Switch off matching
+    ``DEC_ID``
+        Matches decimal names only: ``^[\d]+$``
+    ``HEX_ID``
+        Matches hexadecimal names only: ``^[a-f\d]+$``
+    ``TEXT_ID``
+        Matches single word: ``^[\w\-]+$``
+
 """
 
+import weakref
 import re
 
 
@@ -45,7 +55,28 @@ BaseResource = ResourceMeta('BaseResource', (object,), {})
 
 
 class Resource(BaseResource):
-    """ Base class for resources, which are used in traversal hierarchy """
+    """
+    Base class for resources, which are used in traversal hierarchy
+
+    Derived classes may define class attribute ``__not_exist__``, which
+    should be an exception class or tuple of ones.  These exceptions will
+    be caught within :meth:`__getitem__` method of parent object and will
+    be turned into ``KeyError`` one.
+
+    Each resource object has following attributes:
+
+        ``__name__``
+            Resource name, as it was passed to parent's :meth:`__getitem__`
+            or :meth:`child` method.
+        ``__parent__``
+            Link to a parent resource.  It's actually property, which
+            stores weak reference to a parent.
+        ``__cache__``
+            Cache of child resources, regular dictionary object.
+            It's used by :meth:`__getitem__` method, whereas :meth:`child` one
+            overrides it.
+
+    """
 
     @classmethod
     def mount(cls, name, class_=None):
@@ -68,7 +99,7 @@ class Resource(BaseResource):
         Mounts set of child resources to current one.
 
         A ``pattern`` argument should be compiled regular expression object
-        or any object which provides ``match`` method.  If you are going
+        or any object, which provides ``match`` method.  If you are going
         match any child's name use ``ANY_ID`` constant.
 
         The method can be used as a decorator.
@@ -87,15 +118,24 @@ class Resource(BaseResource):
         self.__cache__ = {}
         self.on_init(payload)
 
+    @property
+    def __parent__(self):
+        return self.__parent()
+
+    @__parent__.setter
+    def __parent__(self, parent):
+        self.__parent = weakref.ref(parent) if parent else lambda: None
+
     def on_init(self, payload):
         """
         Initialization callback.
 
-        It's called from ``__init__`` method.  When resource is created
-        within parent's ``__getitem__`` method, ``payload`` argument
+        It's called from :meth:`__init__` method.  When resource is created
+        within parent's :meth:`__getitem__` method, ``payload`` argument
         will be ``None``.
 
-        Derived classes must override this method instead of ``__init__`` one.
+        Derived classes must override this method instead of
+        :meth:`__init__` one.
 
         """
 
