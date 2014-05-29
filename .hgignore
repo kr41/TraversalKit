@@ -8,3 +8,4 @@ TraversalKit.egg-info
 .coverage
 devenv
 dist
+build
