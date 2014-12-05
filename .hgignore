@@ -2,7 +2,7 @@ syntax: glob
 
 *.pyc
 *.~
-traversal-kit.sublime*
+*.sublime*
 TraversalKit.egg-info
 .tox
 .coverage
