@@ -31,7 +31,7 @@ Quick example of usage:
 
         """
 
-Pretty neat and simple, doesn't it?  Look over `the example application`_ and
+Pretty neat and simple, isn't it?  Look over `the example application`_ and
 `library source code`_ (it's really compact, I swear) to learn how TraversalKit
 can be used.
 

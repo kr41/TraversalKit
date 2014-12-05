@@ -143,7 +143,7 @@ class Resource(BaseResource):
         """
         Creates child resource from given class and name.
 
-        Optional argument ``payload`` will be passed to :meth:`on_load`
+        Optional argument ``payload`` will be passed to :meth:`on_init`
         method.
 
         The method overrides any cache entry for given name.
