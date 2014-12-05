@@ -49,6 +49,14 @@ class File(Resource):
         self.content = payload
 
 
+@SiteRoot.mount('error')
+class Error(Resource):
+    """ It always raises error """
+
+    def on_init(self, payload):
+        raise Exception('Test')
+
+
 sr = SiteRoot()
 
 
@@ -162,3 +170,8 @@ def test_key_error_on_not_exist():
 @tools.raises(IOError)
 def test_ignoring_not_exist():
     File('nonexistent-file')
+
+
+@tools.raises(Exception)
+def test_error_propagation():
+    sr['error']
