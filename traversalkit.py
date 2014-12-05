@@ -167,6 +167,24 @@ class Resource(BaseResource):
         and turns them to ``KeyError``.
 
         """
+        return self.get(name)
+
+    def get(self, name, payload=None):
+        """
+        Returns child resource by its name.
+
+        Optional argument ``payload`` will be passed to :meth:`on_init`
+        method.
+
+        Child resource class should be mounted using :meth:`mount` or
+        :meth:`mount_set` methods.
+
+        The method uses cache.  Therefore it won't create child resource,
+        if it's already created using this method or method :meth:`child`.
+        It also catches exceptions of child's ``__not_exist__`` attribute
+        and turns them to ``KeyError``.
+
+        """
         try:
             return self.__cache__[name]
         except KeyError:
@@ -180,7 +198,7 @@ class Resource(BaseResource):
                 else:
                     raise
             try:
-                return self.child(factory, name)
+                return self.child(factory, name, payload)
             except Exception as e:
                 if factory.__not_exist__ and \
                    isinstance(e, factory.__not_exist__):
