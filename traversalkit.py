@@ -30,7 +30,7 @@ import re
 
 
 __all__ = ['Resource', 'ANY_ID', 'DEC_ID', 'HEX_ID', 'TEXT_ID']
-__version__ = '0.1'
+__version__ = '0.2'
 __author__ = 'Dmitry Vakhrushev <self@kr41.net>'
 __license__ = 'BSD'
 
