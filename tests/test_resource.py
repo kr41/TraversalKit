@@ -2,7 +2,7 @@ import re
 
 import pytest
 
-from traversalkit import Resource, ANY_ID, DEC_ID, HEX_ID, TEXT_ID
+from traversalkit import Resource, ANY_ID, TEXT_ID
 
 
 class SiteRoot(Resource):
@@ -78,15 +78,6 @@ def test_set_ids():
 def test_any_id():
     assert repr(sr['blog']['1-first-post']['Some File 123']) == \
         '<File: /blog/1-first-post/Some File 123/>'
-
-
-def test_built_in_regexp():
-    assert TEXT_ID.match('Jane_Doe-1984')
-    assert not TEXT_ID.match('Jane Doe.1984')
-    assert DEC_ID.match('42')
-    assert not DEC_ID.match('2A')
-    assert HEX_ID.match('2Af')
-    assert not HEX_ID.match('2h')
 
 
 def test_lineage():

@@ -26,10 +26,14 @@ It also provides most common name pattens, which can be used with
 """
 
 
-from .resource import Resource, ANY_ID, DEC_ID, HEX_ID, TEXT_ID
+from .resource import Resource, ResourceMeta
+from .ids import ANY_ID, DEC_ID, HEX_ID, TEXT_ID
 
 
-__all__ = ['Resource', 'ANY_ID', 'DEC_ID', 'HEX_ID', 'TEXT_ID']
+__all__ = [
+    'Resource', 'ResourceMeta',
+    'ANY_ID', 'DEC_ID', 'HEX_ID', 'TEXT_ID',
+]
 __version__ = '0.2'
 __author__ = 'Dmitry Vakhrushev <self@kr41.net>'
 __license__ = 'BSD'
