@@ -31,7 +31,6 @@ setup(
     url='https://bitbucket.org/kr41/traversalkit',
     download_url='https://bitbucket.org/kr41/traversalkit/downloads',
     license='BSD',
-    test_suite='nose.collector',
     py_modules=['traversalkit'],
     zip_safe=True,
 )

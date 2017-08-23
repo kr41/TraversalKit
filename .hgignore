@@ -5,6 +5,7 @@ syntax: glob
 *.sublime*
 TraversalKit.egg-info
 .tox
+.cache
 .coverage
 devenv
 dist
