@@ -234,12 +234,15 @@ class Resource(BaseResource):
 
         """
         if name is not None:
-            check = lambda r: r.__name__ == name
+            def check(resource):
+                return resource.__name__ == name
         elif cls is not None:
             if isinstance(cls, type):
-                check = lambda r: r.__class__ is cls
+                def check(resource):
+                    return resource.__class__ is cls
             else:
-                check = lambda r: r.__class__.__name__ == cls
+                def check(resource):
+                    return resource.__class__.__name__ == cls
         else:
             return self.__parent__
         for resource in self.lineage():
