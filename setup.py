@@ -1,5 +1,5 @@
 import os
-from setuptools import setup
+from setuptools import setup, find_packages
 
 version = '0.2'
 here = os.path.abspath(os.path.dirname(__file__))
@@ -31,6 +31,6 @@ setup(
     url='https://bitbucket.org/kr41/traversalkit',
     download_url='https://bitbucket.org/kr41/traversalkit/downloads',
     license='BSD',
-    py_modules=['traversalkit'],
+    packages=find_packages(exclude=['tests', 'tests.*']),
     zip_safe=True,
 )
