@@ -1,5 +1,7 @@
 import weakref
 
+from cached_property import cached_property
+
 from .ids import ANY_ID
 
 
@@ -101,6 +103,16 @@ class Resource(BaseResource):
 
         """
 
+    @cached_property
+    def uri(self):
+        path = [r.__name__ for r in self.lineage()]
+        path.reverse()
+        path.append('')
+        return '/'.join(path)
+
+    def __repr__(self):
+        return '<{0}: {1}>'.format(self.__class__.__name__, self.uri)
+
     def child(self, cls, name, payload=None):
         """
         Creates child resource from given class and name.
@@ -166,12 +178,6 @@ class Resource(BaseResource):
                    isinstance(e, factory.__not_exist__):
                     raise KeyError(name)
                 raise
-
-    def __repr__(self):
-        url = [r.__name__ for r in self.lineage()]
-        url.reverse()
-        url.append('')
-        return '<{0}: {1}>'.format(self.__class__.__name__, '/'.join(url))
 
     def lineage(self):
         """

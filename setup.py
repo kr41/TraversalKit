@@ -6,6 +6,9 @@ here = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(here, 'README.rst')) as f:
     readme = f.read()
 
+
+requirements = ['cached_property']
+
 setup(
     name='TraversalKit',
     version=version,
@@ -32,5 +35,6 @@ setup(
     download_url='https://bitbucket.org/kr41/traversalkit/downloads',
     license='BSD',
     packages=find_packages(exclude=['tests', 'tests.*']),
+    install_requires=requirements,
     zip_safe=True,
 )
