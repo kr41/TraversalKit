@@ -5,157 +5,161 @@ import pytest
 from traversalkit import Resource, ANY_ID, TEXT_ID
 
 
-class SiteRoot(Resource):
-    """ Web site root resource """
+@pytest.fixture
+def resources():
+    class SiteRoot(Resource):
+        """ Web site root resource """
+
+    @SiteRoot.mount('user')
+    class Users(Resource):
+        """ Collection of users """
+
+    @Users.mount_set(TEXT_ID)
+    class User(Resource):
+        """ User resource """
+
+    @User.mount('blog')
+    @SiteRoot.mount('blog')
+    class Blog(Resource):
+        """
+        Blog resource
+
+        Each user has a blog. There is also a blog of site administrators,
+        which is available on site root.
+
+        """
+
+    @Blog.mount_set(re.compile(r'^[\d]+-[\w\-]+$', re.I))
+    class BlogPost(Resource):
+        """ Blog post resource """
+
+    @BlogPost.mount_set(ANY_ID)
+    class File(Resource):
+        """ Static file resource """
+
+        __not_exist__ = IOError
+
+        def on_init(self, payload):
+            if self.__name__ == 'nonexistent-file':
+                with open('nonexistent-file') as f:
+                    self.content = f.read()     # This will never happen
+            self.content = payload
+
+    @SiteRoot.mount('error')
+    class Error(Resource):
+        """ It always raises error """
+
+        def on_init(self, payload):
+            raise Exception('Test')
+
+    return {
+        class_.__name__: class_
+        for class_ in locals().values()
+        if isinstance(class_, type) and issubclass(class_, Resource)
+    }
 
 
-@SiteRoot.mount('user')
-class Users(Resource):
-    """ Collection of users """
+@pytest.fixture
+def root(resources):
+    return resources['SiteRoot']()
 
 
-@Users.mount_set(TEXT_ID)
-class User(Resource):
-    """ User resource """
+def test_repr(root):
+    assert repr(root) == '<SiteRoot: />'
+    assert repr(root['user']) == '<Users: /user/>'
+    assert repr(root['user']['john']) == '<User: /user/john/>'
 
 
-@User.mount('blog')
-@SiteRoot.mount('blog')
-class Blog(Resource):
-    """
-    Blog resource
-
-    Each user has a blog. There is also a blog of site administrators,
-    which is available on site root.
-
-    """
-
-
-@Blog.mount_set(re.compile(r'^[\d]+-[\w\-]+$', re.I))
-class BlogPost(Resource):
-    """ Blog post resource """
-
-
-@BlogPost.mount_set(ANY_ID)
-class File(Resource):
-    """ Static file resource """
-
-    __not_exist__ = IOError
-
-    def on_init(self, payload):
-        if self.__name__ == 'nonexistent-file':
-            with open('nonexistent-file') as f:
-                self.content = f.read()     # This will never happen
-        self.content = payload
-
-
-@SiteRoot.mount('error')
-class Error(Resource):
-    """ It always raises error """
-
-    def on_init(self, payload):
-        raise Exception('Test')
-
-
-sr = SiteRoot()
-
-
-def test_repr():
-    assert repr(sr) == '<SiteRoot: />'
-    assert repr(sr['user']) == '<Users: /user/>'
-    assert repr(sr['user']['john']) == '<User: /user/john/>'
-
-
-def test_set_ids():
-    assert repr(sr['user']['john']) == '<User: /user/john/>'
-    assert repr(sr['user']['jane']) == '<User: /user/jane/>'
-    assert repr(sr['blog']['1-first-post']) == \
+def test_set_ids(root):
+    assert repr(root['user']['john']) == '<User: /user/john/>'
+    assert repr(root['user']['jane']) == '<User: /user/jane/>'
+    assert repr(root['blog']['1-first-post']) == \
         '<BlogPost: /blog/1-first-post/>'
-    assert repr(sr['blog']['2-post_no_2']) == \
+    assert repr(root['blog']['2-post_no_2']) == \
         '<BlogPost: /blog/2-post_no_2/>'
 
 
-def test_any_id():
-    assert repr(sr['blog']['1-first-post']['Some File 123']) == \
+def test_any_id(root):
+    assert repr(root['blog']['1-first-post']['Some File 123']) == \
         '<File: /blog/1-first-post/Some File 123/>'
 
 
-def test_lineage():
-    lineage = list(sr['user']['john'].lineage())
-    assert lineage[0] == sr['user']['john']
-    assert lineage[1] == sr['user']
-    assert lineage[2] == sr
+def test_lineage(root):
+    lineage = list(root['user']['john'].lineage())
+    assert lineage[0] == root['user']['john']
+    assert lineage[1] == root['user']
+    assert lineage[2] == root
 
 
-def test_cache():
-    users = sr['user']
-    assert users is sr['user']
-    sr.__cache__.clear()
-    assert users is not sr['user']
+def test_cache(root):
+    users = root['user']
+    assert users is root['user']
+    root.__cache__.clear()
+    assert users is not root['user']
 
 
-def test_parent():
-    blog = sr['blog']
+def test_parent(root, resources):
+    blog = root['blog']
     post = blog['1-first-post']
 
-    assert post.parent('') == sr
+    assert post.parent('') == root
     assert post.parent('user') is None
     assert post.parent('blog') == blog
-    assert post.parent(cls='SiteRoot') == sr
-    assert post.parent(cls=SiteRoot) == sr
+    assert post.parent(cls='SiteRoot') == root
+    assert post.parent(cls=resources['SiteRoot']) == root
     assert post.parent(cls='User') is None
-    assert post.parent(cls=User) is None
+    assert post.parent(cls=resources['User']) is None
     assert post.parent(cls='Blog') == blog
-    assert post.parent(cls=Blog) == blog
+    assert post.parent(cls=resources['Blog']) == blog
     assert post.parent() == blog
 
 
-def test_mount_as_method():
-    SiteRoot.mount('privacy-policy', File)
-    assert repr(sr['privacy-policy']) == '<File: /privacy-policy/>'
+def test_mount_as_method(root, resources):
+    resources['SiteRoot'].mount('privacy-policy', resources['File'])
+    assert repr(root['privacy-policy']) == '<File: /privacy-policy/>'
 
 
-def test_mount_set_as_method():
-    User.mount_set(TEXT_ID, File)
-    assert repr(sr['user']['john']['some_file']) == \
+def test_mount_set_as_method(root, resources):
+    resources['User'].mount_set(TEXT_ID, resources['File'])
+    assert repr(root['user']['john']['some_file']) == \
         '<File: /user/john/some_file/>'
 
 
-def test_implicit_child_call():
-    ua = sr.child(File, 'user-agreement', 'Some Content')
+def test_explicit_child_call(root, resources):
+    ua = root.child(resources['File'], 'user-agreement', 'Some Content')
     assert repr(ua) == '<File: /user-agreement/>'
     assert ua.content == 'Some Content'
 
 
-def test_implicit_child_cache():
-    ua1 = sr.child(File, 'user-agreement', 'Some Content')
-    assert ua1 is sr['user-agreement']
+def test_implicit_child_cache(root, resources):
+    ua1 = root.child(resources['File'], 'user-agreement', 'Some Content')
+    assert ua1 is root['user-agreement']
 
-    ua2 = sr.child(File, 'user-agreement', 'Some Other Content')
-    assert ua2 is sr['user-agreement']
+    ua2 = root.child(resources['File'], 'user-agreement', 'Some Other Content')
+    assert ua2 is root['user-agreement']
     assert ua1 is not ua2   # Cache should be updated
 
 
-def test_key_error_on_direct_matching():
+def test_key_error_on_direct_matching(root):
     with pytest.raises(KeyError):
-        sr['group']
+        root['group']
 
 
-def test_key_error_on_pattern_matching():
+def test_key_error_on_pattern_matching(root):
     with pytest.raises(KeyError):
-        sr['blog']['1']
+        root['blog']['1']
 
 
-def test_key_error_on_not_exist():
+def test_key_error_on_not_exist(root):
     with pytest.raises(KeyError):
-        sr['user']['john']['nonexistent-file']
+        root['user']['john']['nonexistent-file']
 
 
-def test_ignoring_not_exist():
+def test_ignoring_not_exist(resources):
     with pytest.raises(IOError):
-        File('nonexistent-file')
+        resources['File']('nonexistent-file')
 
 
-def test_error_propagation():
+def test_error_propagation(root):
     with pytest.raises(Exception):
-        sr['error']
+        root['error']
