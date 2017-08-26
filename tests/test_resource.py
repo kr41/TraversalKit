@@ -141,18 +141,24 @@ def test_implicit_child_cache(root, resources):
 
 
 def test_key_error_on_direct_matching(root):
-    with pytest.raises(KeyError):
+    with pytest.raises(KeyError) as info:
         root['group']
+
+    assert info.value.args == ('group', '/')
 
 
 def test_key_error_on_pattern_matching(root):
-    with pytest.raises(KeyError):
+    with pytest.raises(KeyError) as info:
         root['blog']['1']
+
+    assert info.value.args == ('1', '/blog/')
 
 
 def test_key_error_on_not_exist(root):
-    with pytest.raises(KeyError):
-        root['user']['john']['nonexistent-file']
+    with pytest.raises(KeyError) as info:
+        root['blog']['1-some_post']['nonexistent-file']
+
+    assert info.value.args == ('nonexistent-file', '/blog/1-some_post/')
 
 
 def test_ignoring_not_exist(resources):

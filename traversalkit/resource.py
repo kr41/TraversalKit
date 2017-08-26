@@ -162,22 +162,22 @@ class Resource(BaseResource):
         try:
             return self.__cache__[name]
         except KeyError:
-            try:
-                factory = self._children_map[name]
-            except KeyError:
-                for pattern, class_ in self._children_set:
-                    if pattern is ANY_ID or pattern.match(name):
-                        factory = class_
-                        break
-                else:
-                    raise
-            try:
-                return self.child(factory, name, payload)
-            except Exception as e:
-                if factory.__not_exist__ and \
-                   isinstance(e, factory.__not_exist__):
-                    raise KeyError(name)
-                raise
+            pass
+        try:
+            factory = self._children_map[name]
+        except KeyError:
+            for pattern, class_ in self._children_set:
+                if pattern is ANY_ID or pattern.match(name):
+                    factory = class_
+                    break
+            else:
+                raise KeyError(name, self.uri)
+        try:
+            return self.child(factory, name, payload)
+        except Exception as e:
+            if factory.__not_exist__ and isinstance(e, factory.__not_exist__):
+                raise KeyError(name, self.uri)
+            raise
 
     def lineage(self):
         """
