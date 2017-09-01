@@ -131,6 +131,16 @@ def test_resource_route_and_node(root):
     assert john.__node__ == john.__route__[-1]
 
 
+def test_named_node(root):
+    blog = root['user']['john']['blog']
+    with blog.node('post_id') as add_child:
+        post_1 = add_child('1-post_1')
+        post_2 = add_child('2-post_2')
+
+    assert blog['1-post_1'] is post_1
+    assert blog['2-post_2'] is post_2
+
+
 def test_cache(root):
     users = root['user']
     assert users is root['user']
@@ -166,18 +176,10 @@ def test_mount_set_as_method(root, resources):
 
 
 def test_explicit_child_call(root, resources):
-    ua = root.child(resources['File'], 'user-agreement', 'Some Content')
+    with pytest.warns(DeprecationWarning):
+        ua = root.child(resources['File'], 'user-agreement', 'Some Content')
     assert repr(ua) == '<File: /user-agreement/>'
     assert ua.content == 'Some Content'
-
-
-def test_implicit_child_cache(root, resources):
-    ua1 = root.child(resources['File'], 'user-agreement', 'Some Content')
-    assert ua1 is root['user-agreement']
-
-    ua2 = root.child(resources['File'], 'user-agreement', 'Some Other Content')
-    assert ua2 is root['user-agreement']
-    assert ua1 is not ua2   # Cache should be updated
 
 
 def test_key_error_on_direct_matching(root):
@@ -208,6 +210,22 @@ def test_key_error_on_not_exist(root):
         root['blog']['1-some_post']['nonexistent-file']
 
     assert info.value.args == ('nonexistent-file', '/blog/1-some_post/')
+
+
+def test_key_error_on_named_node(root):
+    with pytest.raises(KeyError) as info:
+        with root.node('nonexistent'):
+            pass
+
+    assert info.value.args == ('nonexistent', '/')
+
+
+def test_key_error_on_restricted_named_node(root):
+    with pytest.raises(KeyError) as info:
+        with root['blog']['1-post_1'].node('comments'):
+            pass
+
+    assert info.value.args == ('comments', '/blog/1-post_1/')
 
 
 def test_ignoring_not_exist(resources):

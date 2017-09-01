@@ -12,11 +12,16 @@ class Node(object):
         self.name = name
         self.pattern = pattern
         self.metaname = metaname
-        self.complies = complies
+        self._complies = complies
 
     @cached_property
     def type(self):
         return 'single' if self.name is not None else 'set'
+
+    def complies(self, route):
+        if self._complies is None:
+            return True
+        return self._complies(route + self)
 
     def __str__(self):
         if self.name is not None:

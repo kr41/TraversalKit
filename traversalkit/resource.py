@@ -1,5 +1,7 @@
 import weakref
 from itertools import chain
+from contextlib import contextmanager
+from warnings import warn
 
 from cached_property import cached_property
 
@@ -12,6 +14,7 @@ class ResourceMeta(type):
     def __init__(cls, class_name, bases, attrs):
         cls._children_map = {}
         cls._children_set = []
+        cls._named_nodes = {}
         cls.__not_exist__ = getattr(cls, '__not_exist__', None)
 
 
@@ -55,8 +58,9 @@ class Resource(BaseResource):
 
         """
         def decorator(class_):
-            cls._children_map[name] = \
-                cls.__nodeclass__(class_, name=name, **kw)
+            node = cls.__nodeclass__(class_, name=name, **kw)
+            cls._children_map[name] = node
+            cls._named_nodes[name] = node
             return class_
         if class_ is not None:
             return decorator(class_)
@@ -75,9 +79,10 @@ class Resource(BaseResource):
 
         """
         def decorator(class_):
-            cls._children_set.append(
-                cls.__nodeclass__(class_, pattern=pattern, **kw),
-            )
+            node = cls.__nodeclass__(class_, pattern=pattern, **kw)
+            cls._children_set.append(node)
+            if node.metaname is not None:
+                cls._named_nodes[node.metaname] = node
             return class_
         if class_ is not None:
             return decorator(class_)
@@ -104,10 +109,6 @@ class Resource(BaseResource):
         self.__parent__ = parent
         self.__cache__ = {}
         self.__node__ = node or self.__nodeclass__(self.__class__, name=name)
-        if self.__parent__ is None:
-            self.__route__ = self.__routeclass__(self.__node__)
-        else:
-            self.__route__ = self.__parent__.__route__ + self.__node__
         self.on_init(payload)
 
     @property
@@ -117,6 +118,12 @@ class Resource(BaseResource):
     @__parent__.setter
     def __parent__(self, parent):
         self.__parent = weakref.ref(parent) if parent else lambda: None
+
+    @cached_property
+    def __route__(self):
+        if self.__parent__ is None:
+            return self.__routeclass__(self.__node__)
+        return self.__parent__.__route__ + self.__node__
 
     def on_init(self, payload):
         """
@@ -141,6 +148,20 @@ class Resource(BaseResource):
     def __repr__(self):
         return '<{0}: {1}>'.format(self.__class__.__name__, self.uri)
 
+    @contextmanager
+    def node(self, name):
+        try:
+            node = self._named_nodes[name]
+        except KeyError:
+            raise KeyError(name, self.uri)
+        if not node.complies(self.__route__):
+            raise KeyError(name, self.uri)
+
+        def add_child(name, payload=None):
+            return self._child(node, name, payload=payload)
+
+        yield add_child
+
     def child(self, class_, name, payload=None, node=None):
         """
         Creates child resource from given class and name.
@@ -153,12 +174,26 @@ class Resource(BaseResource):
         child raises.
 
         """
-        child = self.__cache__[name] = class_(
-            name=name,
-            parent=self,
-            payload=payload,
-            node=node,
-        )
+        warn('Method ``child`` is deprected '
+             'in favor of ``node`` context manager',
+             DeprecationWarning)
+        if node is None:
+            node = self.__nodeclass__(class_, name=name)
+        return self._child(node, name, payload=payload)
+
+    def _child(self, node, name, payload=None):
+        try:
+            child = self.__cache__[name] = node.class_(
+                name=name,
+                parent=self,
+                payload=payload,
+                node=node,
+            )
+        except Exception as e:
+            if node.class_.__not_exist__ and \
+               isinstance(e, node.class_.__not_exist__):
+                raise KeyError(name, self.uri)
+            raise
         return child
 
     def __getitem__(self, name):
@@ -204,16 +239,9 @@ class Resource(BaseResource):
                     break
             else:
                 raise KeyError(name, self.uri)
-        if node.complies is not None and \
-           not node.complies(self.__route__ + node):
+        if not node.complies(self.__route__):
             raise KeyError(name, self.uri)
-        try:
-            return self.child(node.class_, name, payload=payload, node=node)
-        except Exception as e:
-            if node.class_.__not_exist__ and \
-               isinstance(e, node.class_.__not_exist__):
-                raise KeyError(name, self.uri)
-            raise
+        return self._child(node, name, payload=payload)
 
     def lineage(self):
         """
