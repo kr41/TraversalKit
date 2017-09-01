@@ -2,7 +2,7 @@ import re
 
 import pytest
 
-from traversalkit import Resource, ANY_ID, TEXT_ID
+from traversalkit import Resource, ANY_ID, TEXT_ID, condition
 
 
 @pytest.fixture
@@ -14,7 +14,7 @@ def resources():
     class Users(Resource):
         """ Collection of users """
 
-    @Users.mount_set(TEXT_ID)
+    @Users.mount_set(TEXT_ID, metaname='username')
     class User(Resource):
         """ User resource """
 
@@ -25,15 +25,25 @@ def resources():
         Blog resource
 
         Each user has a blog. There is also a blog of site administrators,
-        which is available on site root.
+        which is available at the site root.
 
         """
 
-    @Blog.mount_set(re.compile(r'^[\d]+-[\w\-]+$', re.I))
+    @Blog.mount_set(re.compile(r'^[\d]+-[\w\-]+$', re.I), metaname='post_id')
     class BlogPost(Resource):
         """ Blog post resource """
 
-    @BlogPost.mount_set(ANY_ID)
+    @BlogPost.mount('comments', complies=condition.Under(User))
+    class Comments(Resource):
+        """
+        Blog post comments
+
+        This resource is only available for user blogs,
+        but not for the blog of site administrators (at the site root).
+
+        """
+
+    @BlogPost.mount_set(ANY_ID, metaname='filename')
     class File(Resource):
         """ Static file resource """
 
@@ -70,6 +80,23 @@ def test_repr(root):
     assert repr(root['user']['john']) == '<User: /user/john/>'
 
 
+def test_routes(resources):
+    result = [route.uri for route in resources['SiteRoot'].routes()]
+    assert result == [
+        '/',
+        '/blog/',
+        '/blog/{post_id}/',
+        '/blog/{post_id}/{filename}/',
+        '/error/',
+        '/user/',
+        '/user/{username}/',
+        '/user/{username}/blog/',
+        '/user/{username}/blog/{post_id}/',
+        '/user/{username}/blog/{post_id}/comments/',
+        '/user/{username}/blog/{post_id}/{filename}/',
+    ]
+
+
 def test_set_ids(root):
     assert repr(root['user']['john']) == '<User: /user/john/>'
     assert repr(root['user']['jane']) == '<User: /user/jane/>'
@@ -89,6 +116,19 @@ def test_lineage(root):
     assert lineage[0] == root['user']['john']
     assert lineage[1] == root['user']
     assert lineage[2] == root
+
+
+def test_resource_route_and_node(root):
+    assert root.__route__.uri == '/'
+    assert root.__node__ == root.__route__[-1]
+
+    user = root['user']
+    assert user.__route__.uri == '/user/'
+    assert user.__node__ == user.__route__[-1]
+
+    john = user['john']
+    assert john.__route__.uri == '/user/{username}/'
+    assert john.__node__ == john.__route__[-1]
 
 
 def test_cache(root):
@@ -152,6 +192,15 @@ def test_key_error_on_pattern_matching(root):
         root['blog']['1']
 
     assert info.value.args == ('1', '/blog/')
+
+
+def test_key_error_on_restriction(root):
+    root['user']['john']['blog']['1-some_post']['comments']
+
+    with pytest.raises(Exception) as info:
+        root['blog']['1-some_post']['comments']
+
+    assert info.value.args == ('comments', '/blog/1-some_post/')
 
 
 def test_key_error_on_not_exist(root):
