@@ -49,6 +49,10 @@ class Resource(BaseResource):
     __nodeclass__ = Node
     __routeclass__ = Route
 
+    ##
+    # Resource tree manipulation and introspection
+    #
+
     @classmethod
     def mount(cls, name, class_=None, **kw):
         """
@@ -104,12 +108,29 @@ class Resource(BaseResource):
                 for sub_route in node.class_.routes(this_route):
                     yield sub_route
 
+    ##
+    # Initialization methods and properties
+    #
+
     def __init__(self, name='', parent=None, payload=None, node=None):
         self.__name__ = name
         self.__parent__ = parent
         self.__cache__ = {}
         self.__node__ = node or self.__nodeclass__(self.__class__, name=name)
         self.on_init(payload)
+
+    def on_init(self, payload):
+        """
+        Initialization callback.
+
+        It's called from :meth:`__init__` method.  When resource is created
+        within parent's :meth:`__getitem__` method, ``payload`` argument
+        will be ``None``.
+
+        Derived classes must override this method instead of
+        :meth:`__init__` one.
+
+        """
 
     @property
     def __parent__(self):
@@ -125,19 +146,6 @@ class Resource(BaseResource):
             return self.__routeclass__(self.__node__)
         return self.__parent__.__route__ + self.__node__
 
-    def on_init(self, payload):
-        """
-        Initialization callback.
-
-        It's called from :meth:`__init__` method.  When resource is created
-        within parent's :meth:`__getitem__` method, ``payload`` argument
-        will be ``None``.
-
-        Derived classes must override this method instead of
-        :meth:`__init__` one.
-
-        """
-
     @cached_property
     def uri(self):
         path = [r.__name__ for r in self.lineage()]
@@ -147,6 +155,10 @@ class Resource(BaseResource):
 
     def __repr__(self):
         return '<{0}: {1}>'.format(self.__class__.__name__, self.uri)
+
+    ##
+    # Child creation methods
+    #
 
     @contextmanager
     def node(self, name):
@@ -161,40 +173,6 @@ class Resource(BaseResource):
             return self._child(node, name, payload=payload)
 
         yield add_child
-
-    def child(self, class_, name, payload=None, node=None):
-        """
-        Creates child resource from given class and name.
-
-        Optional argument ``payload`` will be passed to :meth:`on_init`
-        method.
-
-        The method overrides any cache entry for given name.
-        It also doesn't validate child's name and doesn't catch any exception
-        child raises.
-
-        """
-        warn('Method ``child`` is deprected '
-             'in favor of ``node`` context manager',
-             DeprecationWarning)
-        if node is None:
-            node = self.__nodeclass__(class_, name=name)
-        return self._child(node, name, payload=payload)
-
-    def _child(self, node, name, payload=None):
-        try:
-            child = self.__cache__[name] = node.class_(
-                name=name,
-                parent=self,
-                payload=payload,
-                node=node,
-            )
-        except Exception as e:
-            if node.class_.__not_exist__ and \
-               isinstance(e, node.class_.__not_exist__):
-                raise KeyError(name, self.uri)
-            raise
-        return child
 
     def __getitem__(self, name):
         """
@@ -243,6 +221,25 @@ class Resource(BaseResource):
             raise KeyError(name, self.uri)
         return self._child(node, name, payload=payload)
 
+    def _child(self, node, name, payload=None):
+        try:
+            child = self.__cache__[name] = node.class_(
+                name=name,
+                parent=self,
+                payload=payload,
+                node=node,
+            )
+        except Exception as e:
+            if node.class_.__not_exist__ and \
+               isinstance(e, node.class_.__not_exist__):
+                raise KeyError(name, self.uri)
+            raise
+        return child
+
+    ##
+    # Lineage introspection methods
+    #
+
     def lineage(self):
         """
         Returns iterator over resource parents.
@@ -281,3 +278,27 @@ class Resource(BaseResource):
             if check(resource):
                 return resource
         return None
+
+    ##
+    # Deprecated methods
+    #
+
+    def child(self, class_, name, payload=None):
+        """
+        ..  warning:: Deprecated in favor of :meth:`node`.
+
+        Creates child resource from given class and name.
+
+        Optional argument ``payload`` will be passed to :meth:`on_init`
+        method.
+
+        The method overrides any cache entry for given name.
+        It also doesn't validate child's name and doesn't catch any exception
+        child raises.
+
+        """
+        warn('Method ``child`` is deprected '
+             'in favor of ``node`` context manager',
+             DeprecationWarning)
+        node = self.__nodeclass__(class_, name=name)
+        return self._child(node, name, payload=payload)
