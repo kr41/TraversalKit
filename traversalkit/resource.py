@@ -6,6 +6,7 @@ from warnings import warn
 from cached_property import cached_property
 
 from .route import Node, Route
+from .cache import Cache
 
 
 class ResourceMeta(type):
@@ -48,6 +49,7 @@ class Resource(BaseResource):
 
     __nodeclass__ = Node
     __routeclass__ = Route
+    __cacheclass__ = Cache
 
     ##
     # Resource tree manipulation and introspection
@@ -115,7 +117,7 @@ class Resource(BaseResource):
     def __init__(self, name='', parent=None, payload=None, node=None):
         self.__name__ = name
         self.__parent__ = parent
-        self.__cache__ = {}
+        self.__cache__ = self.__cacheclass__()
         self.__node__ = node or self.__nodeclass__(self.__class__, name=name)
         self.on_init(payload)
 
