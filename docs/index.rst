@@ -10,7 +10,7 @@ It helps implement resource tree hierarchy in a simple declarative way:
 
 ..  _Pyramid: http://docs.pylonsproject.org/projects/pyramid/en/latest/
 
-..  code-block:: pycon
+..  doctest::
 
     >>> from traversalkit import Resource, DEC_ID
 
@@ -50,7 +50,7 @@ These resources comply `Pyramid traversal`_ interface and
 ..  _Pyramid traversal: http://docs.pylonsproject.org/projects/pyramid/en/latest/narr/traversal.html
 ..  _Pyramid location awareness: http://docs.pylonsproject.org/projects/pyramid/en/latest/narr/resources.html#location-aware-resources
 
-..  code-block:: pycon
+..  doctest::
 
     >>> root = Root()
     >>> user = root['users']['1']
@@ -66,3 +66,20 @@ These resources comply `Pyramid traversal`_ interface and
     Traceback (most recent call last):
     ...
     KeyError: ('documents', '/users/1/')
+
+
+..  toctree::
+    :maxdepth: 2
+    :caption: Contents:
+
+    changes
+    internals/index
+
+
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`

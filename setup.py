@@ -3,8 +3,12 @@ from setuptools import setup, find_packages
 
 version = '0.2'
 here = os.path.abspath(os.path.dirname(__file__))
+
 with open(os.path.join(here, 'README.rst')) as f:
-    readme = f.read()
+    long_description = '\n' + f.read()
+
+with open(os.path.join(here, 'CHANGES.rst')) as f:
+    long_description += '\n\n' + f.read()
 
 
 requirements = ['cached_property']
@@ -13,7 +17,7 @@ setup(
     name='TraversalKit',
     version=version,
     description='Helper library for Pyramid applications based on Traversal',
-    long_description=readme,
+    long_description=long_description,
     classifiers=[
         'License :: OSI Approved :: BSD License',
         'Programming Language :: Python',

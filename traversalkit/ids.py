@@ -1,3 +1,27 @@
+"""
+The module provides most common ID patterns.
+
+
+..  data:: ANY_ID
+
+    Wildcard matching.  Matches everything: ``.*``
+
+..  data:: DEC_ID
+
+    Matches decimal numbers only: ``^[\d]+$``
+
+
+..  data:: HEX_ID
+
+    Matches hexadecimal numbers only: ``^[a-f\d]+$``
+
+
+..  data:: TEXT_ID
+
+    Matches single word: ``^[\w\-]+$``
+
+"""
+
 import re
 
 
