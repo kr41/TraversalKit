@@ -66,3 +66,10 @@ These resources comply `Pyramid traversal`_ interface and
     Traceback (most recent call last):
     ...
     KeyError: ('documents', '/users/1/')
+
+
+Links
+~~~~~
+
+* `Documentation <http://traversalkit.readthedocs.io/en/latest/index.html>`_.
+* `Source Code and Issue Tracker <https://bitbucket.org/kr41/traversalkit>`_.
