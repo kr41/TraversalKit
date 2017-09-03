@@ -6,7 +6,7 @@ Changes
 
 *   Added support of conditional routes.  See module :mod:`traversalkit.condition`.
 *   Added support of resource tree introspection by
-    :meth:`traversalkit.resource.Resource.route`.
+    :meth:`traversalkit.resource.Resource.routes`.
 *   Added resource URI into raising errors to make them more informative.
 *   Added support of disengageable resource cache.
     See class :class:`traversalkit.cache.Cache`.

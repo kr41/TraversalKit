@@ -5,7 +5,7 @@ Changes
 ~~~
 
 *   Added support of conditional routes.
-*   Added support of resource tree introspection by ``Resource.route()``.
+*   Added support of resource tree introspection by ``Resource.routes()``.
 *   Added resource URI into raising errors to make them more informative.
 *   Added support of disengageable resource cache.
 
