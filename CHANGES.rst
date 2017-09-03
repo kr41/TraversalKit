@@ -1,6 +1,12 @@
 Changes
 -------
 
+0.3.1
+~~~~~
+
+*   Fixed typos of ``README.rst`` and ``CHANGES.rst``.
+
+
 0.3
 ~~~
 
